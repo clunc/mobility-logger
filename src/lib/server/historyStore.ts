@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 import type { HistoryEntry } from '$lib/types';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
-const DB_FILE = path.join(DATA_DIR, 'workout.db');
+const DB_FILE = path.join(DATA_DIR, 'stretch.db');
 
 async function ensureDbFile() {
 	await fs.mkdir(DATA_DIR, { recursive: true });
@@ -18,12 +18,11 @@ function initDb() {
 	db.pragma('journal_mode = WAL');
 	db.exec(`
 		CREATE TABLE IF NOT EXISTS history (
-			exercise TEXT NOT NULL,
-			setNumber INTEGER NOT NULL,
-			weight REAL NOT NULL,
-			reps INTEGER NOT NULL,
+			stretch TEXT NOT NULL,
+			holdNumber INTEGER NOT NULL,
+			durationSeconds INTEGER NOT NULL,
 			timestamp TEXT NOT NULL,
-			PRIMARY KEY (exercise, setNumber, timestamp)
+			PRIMARY KEY (stretch, holdNumber, timestamp)
 		)
 	`);
 	return db;
@@ -34,7 +33,7 @@ export async function readHistory(): Promise<HistoryEntry[]> {
 	const db = initDb();
 	const rows = db
 		.prepare(
-			`SELECT exercise, setNumber, weight, reps, timestamp FROM history ORDER BY datetime(timestamp) DESC`
+			`SELECT stretch, holdNumber, durationSeconds, timestamp FROM history ORDER BY datetime(timestamp) DESC`
 		)
 		.all();
 	db.close();
@@ -45,7 +44,7 @@ export async function appendHistory(entries: HistoryEntry[]): Promise<void> {
 	await ensureDbFile();
 	const db = initDb();
 	const insert = db.prepare(
-		`INSERT INTO history (exercise, setNumber, weight, reps, timestamp) VALUES (@exercise, @setNumber, @weight, @reps, @timestamp)`
+		`INSERT INTO history (stretch, holdNumber, durationSeconds, timestamp) VALUES (@stretch, @holdNumber, @durationSeconds, @timestamp)`
 	);
 
 	const transaction = db.transaction((toInsert: HistoryEntry[]) => {
@@ -59,21 +58,21 @@ export async function appendHistory(entries: HistoryEntry[]): Promise<void> {
 }
 
 export async function deleteTodayEntry({
-	exercise,
-	setNumber,
+	stretch,
+	holdNumber,
 	timestamp
 }: {
-	exercise: string;
-	setNumber: number;
+	stretch: string;
+	holdNumber: number;
 	timestamp: string;
 }): Promise<number> {
 	await ensureDbFile();
 	const db = initDb();
 
 	const stmt = db.prepare(
-		`DELETE FROM history WHERE exercise = ? AND setNumber = ? AND timestamp = ?`
+		`DELETE FROM history WHERE stretch = ? AND holdNumber = ? AND timestamp = ?`
 	);
-	const result = stmt.run(exercise, setNumber, timestamp);
+	const result = stmt.run(stretch, holdNumber, timestamp);
 	db.close();
 
 	return result.changes ?? 0;

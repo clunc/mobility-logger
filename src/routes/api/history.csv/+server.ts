@@ -2,16 +2,15 @@ import { text } from '@sveltejs/kit';
 import { readHistory } from '$lib/server/historyStore';
 import type { RequestHandler } from './$types';
 
-function toCsv(rows: { exercise: string; setNumber: number; weight: number; reps: number; timestamp: string }[]) {
-	const header = 'exercise,setNumber,weight,reps,timestamp';
+function toCsv(rows: {
+	stretch: string;
+	holdNumber: number;
+	durationSeconds: number;
+	timestamp: string;
+}[]) {
+	const header = 'stretch,holdNumber,durationSeconds,timestamp';
 	const lines = rows.map((row) =>
-		[
-			row.exercise,
-			row.setNumber.toString(),
-			row.weight.toString(),
-			row.reps.toString(),
-			row.timestamp
-		].join(',')
+		[row.stretch, row.holdNumber.toString(), row.durationSeconds.toString(), row.timestamp].join(',')
 	);
 
 	return [header, ...lines].join('\n');
@@ -22,7 +21,7 @@ export const GET: RequestHandler = async () => {
 	return text(toCsv(history), {
 		headers: {
 			'Content-Type': 'text/csv',
-			'Content-Disposition': 'attachment; filename="history.csv"'
+			'Content-Disposition': 'attachment; filename="stretch-history.csv"'
 		}
 	});
 };

@@ -8,10 +8,9 @@ const isValidEntry = (entry: unknown): entry is HistoryEntry => {
 
 	const candidate = entry as Record<string, unknown>;
 	return (
-		typeof candidate.exercise === 'string' &&
-		typeof candidate.setNumber === 'number' &&
-		typeof candidate.weight === 'number' &&
-		typeof candidate.reps === 'number' &&
+		typeof candidate.stretch === 'string' &&
+		typeof candidate.holdNumber === 'number' &&
+		typeof candidate.durationSeconds === 'number' &&
 		typeof candidate.timestamp === 'string'
 	);
 };
@@ -40,16 +39,16 @@ export const DELETE: RequestHandler = async ({ request }) => {
 	if (
 		!entry ||
 		typeof entry !== 'object' ||
-		typeof (entry as Record<string, unknown>).exercise !== 'string' ||
+		typeof (entry as Record<string, unknown>).stretch !== 'string' ||
 		typeof (entry as Record<string, unknown>).timestamp !== 'string' ||
-		typeof (entry as Record<string, unknown>).setNumber !== 'number'
+		typeof (entry as Record<string, unknown>).holdNumber !== 'number'
 	) {
 		return json({ error: 'Invalid delete payload' }, { status: 400 });
 	}
 
-	const { exercise, setNumber, timestamp } = entry as {
-		exercise: string;
-		setNumber: number;
+	const { stretch, holdNumber, timestamp } = entry as {
+		stretch: string;
+		holdNumber: number;
 		timestamp: string;
 	};
 
@@ -59,6 +58,6 @@ export const DELETE: RequestHandler = async ({ request }) => {
 		return json({ error: 'Can only delete entries from today' }, { status: 400 });
 	}
 
-	const deleted = await deleteTodayEntry({ exercise, setNumber, timestamp });
+	const deleted = await deleteTodayEntry({ stretch, holdNumber, timestamp });
 	return json({ ok: true, deleted });
 };

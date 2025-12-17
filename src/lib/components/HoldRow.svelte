@@ -1,18 +1,17 @@
 <script lang="ts">
-	import type { SetEntry } from '$lib/types';
+	import type { HoldEntry } from '$lib/types';
 
-	export let set: SetEntry;
-	export let exerciseIdx: number;
-	export let setIdx: number;
-	export let onAdjustWeight: (exerciseIdx: number, setIdx: number, delta: number) => void;
-	export let onAdjustReps: (exerciseIdx: number, setIdx: number, delta: number) => void;
-	export let onSetWeight: (exerciseIdx: number, setIdx: number, value: number | null) => void;
-	export let onSetReps: (exerciseIdx: number, setIdx: number, value: number | null) => void;
-	export let onLogSet: (exerciseIdx: number, setIdx: number) => void;
-	export let onUndoSet: (exerciseIdx: number, setIdx: number) => void;
+	export let hold: HoldEntry;
+	export let stretchIdx: number;
+	export let holdIdx: number;
+	export let onAdjustDuration: (stretchIdx: number, holdIdx: number, delta: number) => void;
+	export let onSetDuration: (stretchIdx: number, holdIdx: number, value: number | null) => void;
+	export let onLogHold: (stretchIdx: number, holdIdx: number) => void;
+	export let onUndoHold: (stretchIdx: number, holdIdx: number) => void;
+	export let isActiveHold: boolean;
+	export let timerStatus: 'idle' | 'active' | 'warning' | 'done';
 
-	const weightId = `weight-${exerciseIdx}-${setIdx}`;
-	const repsId = `reps-${exerciseIdx}-${setIdx}`;
+	const durationId = `duration-${stretchIdx}-${holdIdx}`;
 
 	const toNumberOrNull = (value: string) => {
 		if (value.trim() === '') return null;
@@ -20,75 +19,76 @@
 		return Number.isFinite(parsed) ? parsed : null;
 	};
 
-	function handleWeightInput(event: Event) {
+	function handleDurationInput(event: Event) {
 		const target = event.currentTarget as HTMLInputElement;
-		onSetWeight(exerciseIdx, setIdx, toNumberOrNull(target.value));
+		onSetDuration(stretchIdx, holdIdx, toNumberOrNull(target.value));
 	}
 
-	function handleRepsInput(event: Event) {
-		const target = event.currentTarget as HTMLInputElement;
-		onSetReps(exerciseIdx, setIdx, toNumberOrNull(target.value));
-	}
+	$: isRunning = isActiveHold && (timerStatus === 'active' || timerStatus === 'warning');
+	$: actionLabel = isRunning ? 'Finish' : 'Start';
+	$: actionAriaLabel = isRunning ? 'Finish hold early' : 'Start hold timer';
 </script>
 
 <div class="set-row">
 	<div class="set-header">
-		<div class="set-number">Set {set.setNumber}</div>
+		<div class="set-number">Hold {hold.holdNumber}</div>
 	</div>
 
 	<div class="set-inputs">
 		<div class="set-input-group">
-			<label class="set-input-label" for={weightId}>Weight (kg)</label>
+			<label class="set-input-label" for={durationId}>Duration (sec)</label>
 			<div class="input-with-buttons">
-				<button class="adjust-btn" on:click={() => onAdjustWeight(exerciseIdx, setIdx, -0.5)} disabled={set.completed} type="button">
+				<button
+					class="adjust-btn"
+					on:click={() => onAdjustDuration(stretchIdx, holdIdx, -5)}
+					disabled={hold.completed || isRunning}
+					type="button"
+				>
 					−
 				</button>
 				<input
 					type="number"
-					step="0.5"
+					step="5"
 					class="set-input"
-					class:completed={set.completed}
-					value={Number.isFinite(set.weight) ? set.weight : ''}
+					class:completed={hold.completed}
+					value={Number.isFinite(hold.durationSeconds) ? hold.durationSeconds : ''}
 					min="0"
-					readonly={set.completed}
-					inputmode="decimal"
-					id={weightId}
-					on:input={handleWeightInput}
-				/>
-				<button class="adjust-btn" on:click={() => onAdjustWeight(exerciseIdx, setIdx, 0.5)} disabled={set.completed} type="button">
-					+
-				</button>
-			</div>
-		</div>
-
-		<div class="set-input-group">
-			<label class="set-input-label" for={repsId}>Reps</label>
-			<div class="input-with-buttons">
-				<button class="adjust-btn" on:click={() => onAdjustReps(exerciseIdx, setIdx, -1)} disabled={set.completed} type="button">
-					−
-				</button>
-				<input
-					type="number"
-					class="set-input"
-					class:completed={set.completed}
-					value={Number.isFinite(set.reps) ? set.reps : ''}
-					min="0"
-					readonly={set.completed}
+					readonly={hold.completed || isRunning}
 					inputmode="numeric"
-					id={repsId}
-					on:input={handleRepsInput}
+					id={durationId}
+					on:input={handleDurationInput}
 				/>
-				<button class="adjust-btn" on:click={() => onAdjustReps(exerciseIdx, setIdx, 1)} disabled={set.completed} type="button">
+				<button
+					class="adjust-btn"
+					on:click={() => onAdjustDuration(stretchIdx, holdIdx, 5)}
+					disabled={hold.completed || isRunning}
+					type="button"
+				>
 					+
 				</button>
 			</div>
 		</div>
 
 		<div class="set-actions">
-			{#if set.completed}
-				<button class="log-btn undo-btn" aria-label="Undo set" on:click={() => onUndoSet(exerciseIdx, setIdx)} type="button"></button>
+			{#if hold.completed}
+				<button
+					class="log-btn undo-btn"
+					aria-label="Undo hold"
+					on:click={() => onUndoHold(stretchIdx, holdIdx)}
+					type="button"
+				>
+					Undo
+				</button>
 			{:else}
-				<button class="log-btn" aria-label="Log set" on:click={() => onLogSet(exerciseIdx, setIdx)} type="button"></button>
+				<button
+					class="log-btn"
+					class:active={isRunning}
+					aria-label={actionAriaLabel}
+					on:click={() => onLogHold(stretchIdx, holdIdx)}
+					type="button"
+				>
+					{actionLabel}
+				</button>
 			{/if}
 		</div>
 	</div>
@@ -126,12 +126,12 @@
 		justify-content: center;
 		align-items: center;
 		align-self: stretch;
-		min-width: 52px;
+		min-width: 64px;
 	}
 
 	.set-inputs {
 		display: grid;
-		grid-template-columns: minmax(88px, 1fr) minmax(88px, 1fr) 60px;
+		grid-template-columns: minmax(160px, 1fr) 76px;
 		gap: 8px;
 		width: 100%;
 		align-items: center;
@@ -225,11 +225,12 @@
 		background: #007aff;
 		color: white;
 		border: none;
-		padding: 0;
-		width: 44px;
+		padding: 0 14px;
+		min-width: 64px;
+		height: 44px;
 		height: 44px;
 		border-radius: 10px;
-		font-size: 18px;
+		font-size: 14px;
 		font-weight: 700;
 		cursor: pointer;
 		display: inline-flex;
@@ -251,6 +252,10 @@
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
 	}
 
+	.log-btn.active {
+		background: #0f766e;
+	}
+
 	.log-btn.undo-btn:active {
 		background: #d32f2f;
 		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
@@ -262,18 +267,9 @@
 		box-shadow: none;
 	}
 
-	.log-btn::after {
-		content: '✓';
-		font-size: 18px;
-	}
-
-	.log-btn.undo-btn::after {
-		content: '✕';
-	}
-
 	@media (max-width: 540px) {
 		.set-inputs {
-			grid-template-columns: minmax(90px, 1fr) minmax(90px, 1fr) 56px;
+			grid-template-columns: minmax(140px, 1fr) 76px;
 			column-gap: 6px;
 			row-gap: 8px;
 		}
@@ -284,10 +280,9 @@
 
 		.adjust-btn,
 		.log-btn {
-			width: 44px;
 			height: 44px;
 			border-radius: 10px;
-			font-size: 18px;
+			font-size: 13px;
 		}
 
 		.set-input {
@@ -299,7 +294,7 @@
 
 	@media (max-width: 420px) {
 		.set-inputs {
-			grid-template-columns: minmax(132px, 1fr) minmax(132px, 1fr) 40px;
+			grid-template-columns: minmax(140px, 1fr) 70px;
 			column-gap: 4px;
 		}
 
@@ -307,12 +302,10 @@
 			gap: 4px;
 		}
 
-		.adjust-btn,
 		.log-btn {
-			width: 32px;
-			height: 44px;
+			height: 40px;
 			border-radius: 9px;
-			font-size: 16px;
+			font-size: 12px;
 		}
 
 		.set-input {

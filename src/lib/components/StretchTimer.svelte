@@ -4,13 +4,13 @@
 </script>
 
 {#if status !== 'idle'}
-	<div class={`rest-timer ${status}`} aria-live="polite">
+	<div class={`stretch-timer ${status}`} aria-live="polite">
 		{label}
 	</div>
 {/if}
 
 <style>
-	.rest-timer {
+	.stretch-timer {
 		position: fixed;
 		bottom: 16px;
 		left: 50%;
@@ -29,16 +29,16 @@
 		text-align: center;
 	}
 
-	.rest-timer.warning {
+	.stretch-timer.warning {
 		background: #ff9500;
 	}
 
-	.rest-timer.done {
+	.stretch-timer.done {
 		background: #4caf50;
 	}
 
 	@media (max-width: 540px) {
-		.rest-timer {
+		.stretch-timer {
 			padding: 12px 20px;
 			font-size: 18px;
 			width: calc(100% - 24px);

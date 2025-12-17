@@ -1,20 +1,20 @@
 <script lang="ts">
 	import type { HistoryEntry } from '$lib/types';
-	import { formatTimestamp } from '$lib/workout';
+	import { formatTimestamp } from '$lib/stretch';
 
 	export let entries: HistoryEntry[] = [];
 </script>
 
 {#if entries.length > 0}
 	<section class="history-section">
-		<div class="history-title">Today's Sets</div>
+		<div class="history-title">Today's Stretches</div>
 		{#each entries as entry}
 			<article class="history-card">
 				<div class="history-header">
-					<span class="history-exercise">{entry.exercise} - Set {entry.setNumber}</span>
+					<span class="history-exercise">{entry.stretch} - Hold {entry.holdNumber}</span>
 					<span class="history-date">{formatTimestamp(entry.timestamp)}</span>
 				</div>
-				<div class="history-set">{entry.weight} kg × {entry.reps} reps</div>
+				<div class="history-set">Hold for {entry.durationSeconds} seconds</div>
 			</article>
 		{/each}
 	</section>

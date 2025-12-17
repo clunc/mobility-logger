@@ -1,22 +1,19 @@
 export type HistoryEntry = {
-	exercise: string;
-	setNumber: number;
-	weight: number;
-	reps: number;
+	stretch: string;
+	holdNumber: number;
+	durationSeconds: number;
 	timestamp: string;
 };
 
-export type SetEntry = {
-	setNumber: number;
-	weight: number;
-	reps: number;
+export type HoldEntry = {
+	holdNumber: number;
+	durationSeconds: number;
 	completed: boolean;
 	timestamp: string | null;
 };
 
-export type SessionExercise = {
+export type SessionStretch = {
 	name: string;
-	sets: SetEntry[];
-	defaultWeight: number;
-	defaultReps: number;
+	holds: HoldEntry[];
+	defaultDurationSeconds: number;
 };

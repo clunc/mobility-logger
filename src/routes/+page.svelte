@@ -1,18 +1,19 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
-	import ExerciseCard from '$lib/components/ExerciseCard.svelte';
+	import StretchCard from '$lib/components/StretchCard.svelte';
 	import HistoryList from '$lib/components/HistoryList.svelte';
-	import RestTimer from '$lib/components/RestTimer.svelte';
+	import StretchTimer from '$lib/components/StretchTimer.svelte';
 	import { appendHistory, deleteHistoryEntry, fetchHistory } from '$lib/api/history';
-	import { createSession, REST_SECONDS, todayString } from '$lib/workout';
-	import type { HistoryEntry, SessionExercise } from '$lib/types';
+	import { createSession, DEFAULT_HOLD_SECONDS, todayString } from '$lib/stretch';
+	import type { HistoryEntry, SessionStretch } from '$lib/types';
 
 	let history: HistoryEntry[] = [];
-	let currentSession: SessionExercise[] = [];
-	let restTimeRemaining = REST_SECONDS;
-	let restTimerStatus: 'idle' | 'active' | 'warning' | 'done' = 'idle';
-	let restTimerInterval: ReturnType<typeof setInterval> | null = null;
-	let restHideTimeout: ReturnType<typeof setTimeout> | null = null;
+	let currentSession: SessionStretch[] = [];
+	let holdTimeRemaining = 0;
+	let holdTimerStatus: 'idle' | 'active' | 'warning' | 'done' = 'idle';
+	let holdTimerInterval: ReturnType<typeof setInterval> | null = null;
+	let holdHideTimeout: ReturnType<typeof setTimeout> | null = null;
+	let activeHold: { stretchIdx: number; holdIdx: number } | null = null;
 	let pollInterval: ReturnType<typeof setInterval> | null = null;
 	let ready = false;
 	let loadError = '';
@@ -31,8 +32,8 @@
 	});
 
 	onDestroy(() => {
-		if (restTimerInterval) clearInterval(restTimerInterval);
-		if (restHideTimeout) clearTimeout(restHideTimeout);
+		if (holdTimerInterval) clearInterval(holdTimerInterval);
+		if (holdHideTimeout) clearTimeout(holdHideTimeout);
 		if (pollInterval) clearInterval(pollInterval);
 	});
 
@@ -47,70 +48,62 @@
 		}
 	}
 
-	function adjustWeight(exerciseIdx: number, setIdx: number, delta: number) {
-		const set = currentSession[exerciseIdx].sets[setIdx];
-		if (set.completed) return;
+	function adjustDuration(stretchIdx: number, holdIdx: number, delta: number) {
+		const hold = currentSession[stretchIdx].holds[holdIdx];
+		if (hold.completed) return;
 
-		const next = Math.max(0, (set.weight || 0) + delta);
-		set.weight = Number(next.toFixed(1));
+		const next = Math.max(0, (hold.durationSeconds || 0) + delta);
+		hold.durationSeconds = Math.round(next);
 		currentSession = [...currentSession];
 	}
 
-	function setWeightFromInput(exerciseIdx: number, setIdx: number, value: number | null) {
-		const set = currentSession[exerciseIdx].sets[setIdx];
-		if (set.completed) return;
+	function setDurationFromInput(stretchIdx: number, holdIdx: number, value: number | null) {
+		const hold = currentSession[stretchIdx].holds[holdIdx];
+		if (hold.completed) return;
 
-		set.weight = value === null ? NaN : value;
+		hold.durationSeconds = value === null ? NaN : Math.round(value);
 		currentSession = [...currentSession];
 	}
 
-	function adjustReps(exerciseIdx: number, setIdx: number, delta: number) {
-		const set = currentSession[exerciseIdx].sets[setIdx];
-		if (set.completed) return;
+	async function handleHoldAction(stretchIdx: number, holdIdx: number) {
+		const hold = currentSession[stretchIdx].holds[holdIdx];
 
-		set.reps = Math.max(0, (set.reps || 0) + delta);
-		currentSession = [...currentSession];
-	}
-
-	function setRepsFromInput(exerciseIdx: number, setIdx: number, value: number | null) {
-		const set = currentSession[exerciseIdx].sets[setIdx];
-		if (set.completed) return;
-
-		set.reps = value === null ? NaN : value;
-		currentSession = [...currentSession];
-	}
-
-	async function logSet(exerciseIdx: number, setIdx: number) {
-		const exercise = currentSession[exerciseIdx];
-		const set = exercise.sets[setIdx];
-
-		if (!Number.isFinite(set.weight) || !Number.isFinite(set.reps)) {
-			alert('Please enter valid weight and reps');
+		if (!Number.isFinite(hold.durationSeconds) || hold.durationSeconds <= 0) {
+			alert('Please enter a valid duration');
 			return;
 		}
 
-		const today = todayString();
+		if (
+			activeHold &&
+			activeHold.stretchIdx === stretchIdx &&
+			activeHold.holdIdx === holdIdx &&
+			(holdTimerStatus === 'active' || holdTimerStatus === 'warning')
+		) {
+			await finishHoldEarly(stretchIdx, holdIdx);
+			return;
+		}
 
-		set.completed = true;
-		set.timestamp = new Date().toISOString();
+		startHoldTimer(stretchIdx, holdIdx);
+	}
+
+	async function completeHold(stretchIdx: number, holdIdx: number) {
+		const stretch = currentSession[stretchIdx];
+		const hold = stretch.holds[holdIdx];
+		if (hold.completed) return;
+
+		hold.completed = true;
+		hold.timestamp = new Date().toISOString();
 
 		const entry: HistoryEntry = {
-			exercise: exercise.name,
-			setNumber: set.setNumber,
-			weight: set.weight,
-			reps: set.reps,
-			timestamp: set.timestamp
+			stretch: stretch.name,
+			holdNumber: hold.holdNumber,
+			durationSeconds: hold.durationSeconds,
+			timestamp: hold.timestamp
 		};
 
 		history = [entry, ...history];
-
-		const nextSet = exercise.sets[setIdx + 1];
-		if (nextSet && !nextSet.completed) {
-			nextSet.weight = set.weight;
-			nextSet.reps = set.reps;
-		}
-
 		currentSession = [...currentSession];
+
 		if (!loadError) {
 			try {
 				await appendHistory([entry]);
@@ -120,18 +113,17 @@
 				loadError = 'Could not save history. Changes will not be saved.';
 			}
 		}
-		startRestTimer();
 	}
 
-	async function undoSet(exerciseIdx: number, setIdx: number) {
-		const exercise = currentSession[exerciseIdx];
-		const set = exercise.sets[setIdx];
-		if (!set.completed || !set.timestamp) return;
+	async function undoHold(stretchIdx: number, holdIdx: number) {
+		const stretch = currentSession[stretchIdx];
+		const hold = stretch.holds[holdIdx];
+		if (!hold.completed || !hold.timestamp) return;
 
 		const entry = {
-			exercise: exercise.name,
-			setNumber: set.setNumber,
-			timestamp: set.timestamp
+			stretch: stretch.name,
+			holdNumber: hold.holdNumber,
+			timestamp: hold.timestamp
 		};
 
 		try {
@@ -144,8 +136,8 @@
 
 		const index = history.findIndex(
 			(h) =>
-				h.exercise === entry.exercise &&
-				h.setNumber === entry.setNumber &&
+				h.stretch === entry.stretch &&
+				h.holdNumber === entry.holdNumber &&
 				h.timestamp === entry.timestamp
 		);
 
@@ -154,8 +146,8 @@
 			history = [...history];
 		}
 
-		set.completed = false;
-		set.timestamp = null;
+		hold.completed = false;
+		hold.timestamp = null;
 		currentSession = [...currentSession];
 
 		if (!loadError) {
@@ -163,54 +155,92 @@
 		}
 	}
 
-	function startRestTimer() {
-		if (restTimerInterval) clearInterval(restTimerInterval);
-		if (restHideTimeout) clearTimeout(restHideTimeout);
+	function resetHoldTimer() {
+		if (holdTimerInterval) clearInterval(holdTimerInterval);
+		if (holdHideTimeout) clearTimeout(holdHideTimeout);
 
-		restTimeRemaining = REST_SECONDS;
-		restTimerStatus = 'active';
+		holdTimerInterval = null;
+		holdHideTimeout = null;
+		holdTimerStatus = 'idle';
+		holdTimeRemaining = 0;
+		activeHold = null;
+	}
 
-		restTimerInterval = setInterval(() => {
-			restTimeRemaining -= 1;
+	function startHoldTimer(stretchIdx: number, holdIdx: number) {
+		resetHoldTimer();
 
-			if (restTimeRemaining <= 0) {
-				restTimeRemaining = 0;
-				restTimerStatus = 'done';
-				clearInterval(restTimerInterval!);
-				restTimerInterval = null;
+		const hold = currentSession[stretchIdx].holds[holdIdx];
+		if (!Number.isFinite(hold.durationSeconds) || hold.durationSeconds <= 0) {
+			alert('Please enter a valid duration');
+			return;
+		}
+
+		holdTimeRemaining = Math.max(1, Math.round(hold.durationSeconds || DEFAULT_HOLD_SECONDS));
+		holdTimerStatus = holdTimeRemaining <= 5 ? 'warning' : 'active';
+		activeHold = { stretchIdx, holdIdx };
+
+		holdTimerInterval = setInterval(() => {
+			holdTimeRemaining -= 1;
+
+			if (holdTimeRemaining <= 0) {
+				holdTimeRemaining = 0;
+				holdTimerStatus = 'done';
+				clearInterval(holdTimerInterval!);
+				holdTimerInterval = null;
 
 				if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
 					navigator.vibrate([200, 100, 200]);
 				}
 
-				restHideTimeout = setTimeout(() => {
-					restTimerStatus = 'idle';
+				void completeHold(stretchIdx, holdIdx);
+
+				holdHideTimeout = setTimeout(() => {
+					holdTimerStatus = 'idle';
+					activeHold = null;
 				}, 3000);
-			} else if (restTimeRemaining <= 10) {
-				restTimerStatus = 'warning';
+			} else if (holdTimeRemaining <= 5) {
+				holdTimerStatus = 'warning';
 			}
 		}, 1000);
 	}
 
-	function mergeInProgressSession(newSession: SessionExercise[]): SessionExercise[] {
-		return newSession.map((exercise) => {
-			const current = currentSession.find((e) => e.name === exercise.name);
-			if (!current) return exercise;
+	async function finishHoldEarly(stretchIdx: number, holdIdx: number) {
+		if (holdTimerInterval) clearInterval(holdTimerInterval);
+		if (holdHideTimeout) clearTimeout(holdHideTimeout);
 
-			const sets = exercise.sets.map((set) => {
-				const currentSet = current.sets.find((s) => s.setNumber === set.setNumber);
-				if (!currentSet) return set;
+		holdTimerInterval = null;
+		holdHideTimeout = null;
+		holdTimeRemaining = 0;
+		holdTimerStatus = 'done';
 
-				if (!set.completed && !currentSet.completed) {
-					const weight = Number.isFinite(currentSet.weight) ? currentSet.weight : set.weight;
-					const reps = Number.isFinite(currentSet.reps) ? currentSet.reps : set.reps;
-					return { ...set, weight, reps };
+		await completeHold(stretchIdx, holdIdx);
+
+		holdHideTimeout = setTimeout(() => {
+			holdTimerStatus = 'idle';
+			activeHold = null;
+		}, 3000);
+	}
+
+	function mergeInProgressSession(newSession: SessionStretch[]): SessionStretch[] {
+		return newSession.map((stretch) => {
+			const current = currentSession.find((s) => s.name === stretch.name);
+			if (!current) return stretch;
+
+			const holds = stretch.holds.map((hold) => {
+				const currentHold = current.holds.find((h) => h.holdNumber === hold.holdNumber);
+				if (!currentHold) return hold;
+
+				if (!hold.completed && !currentHold.completed) {
+					const durationSeconds = Number.isFinite(currentHold.durationSeconds)
+						? currentHold.durationSeconds
+						: hold.durationSeconds;
+					return { ...hold, durationSeconds };
 				}
 
-				return set;
+				return hold;
 			});
 
-			return { ...exercise, sets };
+			return { ...stretch, holds };
 		});
 	}
 
@@ -218,40 +248,43 @@
 		(entry) => new Date(entry.timestamp).toDateString() === todayString()
 	);
 
-	$: restTimerLabel =
-		restTimerStatus === 'done'
-			? 'Ready!'
-			: `${Math.floor(restTimeRemaining / 60)}:${String(restTimeRemaining % 60).padStart(2, '0')}`;
+	$: holdTimerLabel =
+		holdTimerStatus === 'done'
+			? 'Hold complete'
+			: `${Math.floor(holdTimeRemaining / 60)}:${String(holdTimeRemaining % 60).padStart(2, '0')}`;
+
+	const isActiveHold = (stretchIdx: number, holdIdx: number) =>
+		activeHold?.stretchIdx === stretchIdx && activeHold?.holdIdx === holdIdx;
 </script>
 
 <svelte:head>
-	<title>Training Logger</title>
+	<title>Stretch Logger</title>
 </svelte:head>
 
 <div class="page">
 	<nav class="navbar">
-		<h1>💪 Training Logger</h1>
+		<h1>🧘 Stretch Logger</h1>
 	</nav>
 
 	{#if !ready}
 		<div class="content">
-			<p class="loading">Loading your session...</p>
+			<p class="loading">Loading your stretches...</p>
 		</div>
 	{:else}
 		<div class="content">
 			{#if loadError}
 				<div class="alert">{loadError}</div>
 			{/if}
-			{#each currentSession as exercise, exerciseIdx}
-				<ExerciseCard
-					{exercise}
-					{exerciseIdx}
-					onAdjustWeight={adjustWeight}
-					onAdjustReps={adjustReps}
-					onSetWeight={setWeightFromInput}
-					onSetReps={setRepsFromInput}
-					onLogSet={logSet}
-					onUndoSet={undoSet}
+			{#each currentSession as stretch, stretchIdx}
+				<StretchCard
+					{stretch}
+					{stretchIdx}
+					onAdjustDuration={adjustDuration}
+					onSetDuration={setDurationFromInput}
+					onLogHold={handleHoldAction}
+					onUndoHold={undoHold}
+					{isActiveHold}
+					timerStatus={holdTimerStatus}
 				/>
 			{/each}
 
@@ -259,7 +292,7 @@
 		</div>
 	{/if}
 
-	<RestTimer status={restTimerStatus} label={restTimerLabel} />
+	<StretchTimer status={holdTimerStatus} label={holdTimerLabel} />
 </div>
 
 <style>
