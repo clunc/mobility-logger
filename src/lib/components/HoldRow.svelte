@@ -10,6 +10,8 @@
 	export let onUndoHold: (stretchIdx: number, holdIdx: number) => void;
 	export let isActiveHold: boolean;
 	export let timerStatus: 'idle' | 'active' | 'warning' | 'done';
+	export let holdLabel: string | null = null;
+	export let totalHolds = 1;
 
 	const durationId = `duration-${stretchIdx}-${holdIdx}`;
 
@@ -27,12 +29,16 @@
 	$: isRunning = isActiveHold && (timerStatus === 'active' || timerStatus === 'warning');
 	$: actionLabel = isRunning ? 'Finish' : 'Start';
 	$: actionAriaLabel = isRunning ? 'Finish hold early' : 'Start hold timer';
+	$: displayLabel =
+		holdLabel ?? (totalHolds > 1 ? `Hold ${hold.holdNumber}` : '');
 </script>
 
 <div class="set-row">
-	<div class="set-header">
-		<div class="set-number">Hold {hold.holdNumber}</div>
-	</div>
+	{#if displayLabel}
+		<div class="set-header">
+			<div class="set-number">{displayLabel}</div>
+		</div>
+	{/if}
 
 	<div class="set-inputs">
 		<div class="set-input-group">

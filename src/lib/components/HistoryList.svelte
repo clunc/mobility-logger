@@ -1,8 +1,13 @@
 <script lang="ts">
 	import type { HistoryEntry } from '$lib/types';
-	import { formatTimestamp } from '$lib/stretch';
+	import { formatTimestamp, getHoldLabel } from '$lib/stretch';
 
 	export let entries: HistoryEntry[] = [];
+
+	const formatEntryLabel = (entry: HistoryEntry) => {
+		const label = getHoldLabel(entry.stretch, entry.holdNumber);
+		return label ? `${entry.stretch} - ${label}` : entry.stretch;
+	};
 </script>
 
 {#if entries.length > 0}
@@ -11,7 +16,7 @@
 		{#each entries as entry}
 			<article class="history-card">
 				<div class="history-header">
-					<span class="history-exercise">{entry.stretch} - Hold {entry.holdNumber}</span>
+					<span class="history-exercise">{formatEntryLabel(entry)}</span>
 					<span class="history-date">{formatTimestamp(entry.timestamp)}</span>
 				</div>
 				<div class="history-set">Hold for {entry.durationSeconds} seconds</div>

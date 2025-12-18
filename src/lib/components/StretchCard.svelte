@@ -33,6 +33,8 @@
 				{onLogHold}
 				{onUndoHold}
 				isActiveHold={isActiveHold(stretchIdx, holdIdx)}
+				holdLabel={stretch.holdLabels?.[holdIdx] ?? null}
+				totalHolds={stretch.holds.length}
 				{timerStatus}
 			/>
 		{/each}

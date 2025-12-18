@@ -16,4 +16,5 @@ export type SessionStretch = {
 	name: string;
 	holds: HoldEntry[];
 	defaultDurationSeconds: number;
+	holdLabels?: string[];
 };
