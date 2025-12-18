@@ -1,0 +1,69 @@
+- name: Banded External Rotation 90/90 (shoulder rotators)
+  defaultDurationSeconds: 65
+- name: Neck Rotations (neck)
+  defaultDurationSeconds: 65
+- name: Chin Tucks (neck)
+  defaultDurationSeconds: 65
+- name: Side Neck Stretch (neck)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Levator Scap Stretch (neck)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Cross-Body Shoulder Stretch (shoulders)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: 45 deg Armpit Neck Stretch (neck)
+  defaultDurationSeconds: 65
+- name: Wrist Flexor Stretch (forearms)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Wrist Extensor Stretch (forearms)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Seated Lateral Stretch (lat ribs, intercostals, QL)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Knee-to-Wall (ankles)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Calf Stretch (calves)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Soleus Stretch (soleus)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Doorway Stretch (chest, shoulders)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Overhead Triceps/Lat Stretch (arms, back)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Toe Extension Mobility Drill (feet/ankles)
+  defaultDurationSeconds: 65
+- name: Cat-Cow (spine)
+  defaultDurationSeconds: 65
+- name: Sleeper Stretch (shoulders)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Open Book (upper back, chest)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Quad + Hip Flexor (legs, hips)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Figure-4 (glutes)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Butterfly (groin)
+  defaultDurationSeconds: 65
+- name: 90/90 (hips)
+  defaultDurationSeconds: 65
+- name: Forward Fold (hamstrings, spine)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
+- name: Weighted Thoracic Extension Over Foam Roller (thoracic)
+  defaultDurationSeconds: 65
+- name: Side Lunges (groin)
+  defaultDurationSeconds: 65
+  holdLabels: [Left, Right]

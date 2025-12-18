@@ -18,3 +18,9 @@ export type SessionStretch = {
 	defaultDurationSeconds: number;
 	holdLabels?: string[];
 };
+
+export type StretchTemplate = {
+	name: string;
+	defaultDurationSeconds: number;
+	holdLabels?: string[];
+};

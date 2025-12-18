@@ -6,6 +6,9 @@
 	import { appendHistory, deleteHistoryEntry, fetchHistory } from '$lib/api/history';
 	import { createSession, DEFAULT_HOLD_SECONDS, todayString } from '$lib/stretch';
 	import type { HistoryEntry, SessionStretch } from '$lib/types';
+	import type { PageData } from './$types';
+
+	export let data: PageData;
 
 	let history: HistoryEntry[] = [];
 	let currentSession: SessionStretch[] = [];
@@ -25,7 +28,7 @@
 			console.error(error);
 			loadError = 'Could not load history. Changes will not be saved.';
 		} finally {
-			currentSession = createSession(history);
+			currentSession = createSession(data.stretchTemplate, history);
 			ready = true;
 			pollInterval = setInterval(syncHistory, 15000);
 		}
@@ -41,7 +44,7 @@
 		try {
 			const latest = await fetchHistory();
 			history = latest;
-			currentSession = mergeInProgressSession(createSession(history));
+			currentSession = mergeInProgressSession(createSession(data.stretchTemplate, history));
 		} catch (error) {
 			console.error('Failed to refresh history', error);
 			loadError = 'Could not refresh history from server.';
@@ -255,6 +258,51 @@
 
 	const isActiveHold = (stretchIdx: number, holdIdx: number) =>
 		activeHold?.stretchIdx === stretchIdx && activeHold?.holdIdx === holdIdx;
+
+	$: totalHolds = currentSession.reduce((sum, stretch) => sum + stretch.holds.length, 0);
+	$: completedHolds = currentSession.reduce(
+		(sum, stretch) => sum + stretch.holds.filter((hold) => hold.completed).length,
+		0
+	);
+	$: completionPercent = totalHolds === 0 ? 0 : Math.round((completedHolds / totalHolds) * 100);
+
+	const calculateStreak = (entries: HistoryEntry[]) => {
+		const datesWithEntries = new Set(entries.map((entry) => new Date(entry.timestamp).toDateString()));
+		let streak = 0;
+		const cursor = new Date();
+
+		while (datesWithEntries.has(cursor.toDateString())) {
+			streak += 1;
+			cursor.setDate(cursor.getDate() - 1);
+		}
+
+		return streak;
+	};
+
+	$: streakDays = calculateStreak(history);
+	$: holdLabelsMap = Object.fromEntries(
+		data.stretchTemplate.map((stretch) => [stretch.name, stretch.holdLabels ?? []])
+	);
+
+	const calculateMonthlyAccordance = (entries: HistoryEntry[]) => {
+		const today = new Date();
+		const year = today.getFullYear();
+		const month = today.getMonth();
+		const daysSoFar = today.getDate();
+
+		if (daysSoFar === 0) return 0;
+
+		const datesWithEntries = new Set(
+			entries
+				.map((entry) => new Date(entry.timestamp))
+				.filter((d) => d.getFullYear() === year && d.getMonth() === month)
+				.map((d) => d.toDateString())
+		);
+
+		return Math.round((datesWithEntries.size / daysSoFar) * 100);
+	};
+
+	$: monthlyAccordance = calculateMonthlyAccordance(history);
 </script>
 
 <svelte:head>
@@ -264,7 +312,17 @@
 <div class="page">
 	<nav class="navbar">
 		<h1>🧘 Stretch Logger</h1>
-	</nav>
+			<div class="badges">
+				<div class="summary-pill" aria-live="polite">
+					<span class="pill-icon">🔥</span>
+					<span>{streakDays} day{streakDays === 1 ? '' : 's'} streak</span>
+				</div>
+				<div class="summary-pill" aria-live="polite">
+					<span class="pill-icon">🎯</span>
+					<span>{monthlyAccordance}% month</span>
+				</div>
+			</div>
+		</nav>
 
 	{#if !ready}
 		<div class="content">
@@ -275,6 +333,27 @@
 			{#if loadError}
 				<div class="alert">{loadError}</div>
 			{/if}
+			<section class="summary">
+				<div class="summary-card">
+					<div class="summary-label">Today</div>
+					<div class="summary-value">{completionPercent}%</div>
+					<div class="summary-sub">
+						{completedHolds} / {totalHolds} holds
+					</div>
+				</div>
+				<div class="summary-card">
+					<div class="summary-label">Streak</div>
+					<div class="summary-value">{streakDays}</div>
+					<div class="summary-sub">
+						{streakDays === 0 ? 'Start today' : 'Keep it going'}
+					</div>
+				</div>
+				<div class="summary-card">
+					<div class="summary-label">Monthly Accordance</div>
+					<div class="summary-value">{monthlyAccordance}%</div>
+					<div class="summary-sub">This month so far</div>
+				</div>
+			</section>
 			{#each currentSession as stretch, stretchIdx}
 				<StretchCard
 					{stretch}
@@ -288,7 +367,7 @@
 				/>
 			{/each}
 
-			<HistoryList entries={todaysHistory} />
+			<HistoryList entries={todaysHistory} {holdLabelsMap} />
 		</div>
 	{/if}
 
@@ -332,6 +411,29 @@
 		font-weight: 700;
 	}
 
+	.badges {
+		display: flex;
+		gap: 10px;
+		align-items: center;
+	}
+
+	.summary-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		background: #fff7ed;
+		color: #9a3412;
+		border: 1px solid #fed7aa;
+		padding: 8px 12px;
+		border-radius: 999px;
+		font-weight: 700;
+		font-size: 13px;
+	}
+
+	.pill-icon {
+		font-size: 16px;
+	}
+
 	.content {
 		padding: 16px 12px;
 		max-width: 720px;
@@ -353,6 +455,42 @@
 		font-size: 14px;
 	}
 
+	.summary {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+		gap: 12px;
+		margin: 10px 0 14px;
+	}
+
+	.summary-card {
+		background: white;
+		border-radius: 12px;
+		padding: 14px 16px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+		border: 1px solid #eef1f6;
+	}
+
+	.summary-label {
+		font-size: 12px;
+		font-weight: 700;
+		color: #6b7280;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-bottom: 6px;
+	}
+
+	.summary-value {
+		font-size: 28px;
+		font-weight: 800;
+		color: #0f172a;
+	}
+
+	.summary-sub {
+		margin-top: 4px;
+		color: #6b7280;
+		font-size: 13px;
+	}
+
 	@media (max-width: 540px) {
 		.navbar h1 {
 			font-size: 17px;
@@ -360,6 +498,19 @@
 
 		.content {
 			padding: 14px 10px;
+		}
+
+		.badges {
+			gap: 8px;
+		}
+
+		.summary-pill {
+			padding: 7px 10px;
+			font-size: 12px;
+		}
+
+		.summary {
+			grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 		}
 	}
 </style>

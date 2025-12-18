@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { HistoryEntry } from '$lib/types';
-	import { formatTimestamp, getHoldLabel } from '$lib/stretch';
+	import { formatTimestamp } from '$lib/stretch';
 
 	export let entries: HistoryEntry[] = [];
+	export let holdLabelsMap: Record<string, string[] | undefined> = {};
 
 	const formatEntryLabel = (entry: HistoryEntry) => {
-		const label = getHoldLabel(entry.stretch, entry.holdNumber);
+		const labels = holdLabelsMap[entry.stretch];
+		const label = labels?.[entry.holdNumber - 1];
 		return label ? `${entry.stretch} - ${label}` : entry.stretch;
 	};
 </script>
