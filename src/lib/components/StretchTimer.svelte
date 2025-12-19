@@ -1,6 +1,17 @@
 <script lang="ts">
 	export let status: 'idle' | 'active' | 'warning' | 'done' = 'idle';
 	export let label: string;
+
+	let prevStatus: typeof status = status;
+
+	// Trigger vibration once when a hold timer completes.
+	$: if (status === 'done' && prevStatus !== 'done') {
+		if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+			navigator.vibrate([220, 90, 220]);
+		}
+	}
+
+	$: prevStatus = status;
 </script>
 
 {#if status !== 'idle'}

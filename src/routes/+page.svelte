@@ -209,10 +209,6 @@
 					holdTimerInterval = null;
 				}
 
-				if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-					navigator.vibrate([200, 100, 200]);
-				}
-
 				holdHideTimeout = setTimeout(() => {
 					holdTimerStatus = 'idle';
 					activeHold = null;
