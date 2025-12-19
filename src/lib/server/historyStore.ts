@@ -57,6 +57,24 @@ export async function appendHistory(entries: HistoryEntry[]): Promise<void> {
 	db.close();
 }
 
+export async function replaceHistory(entries: HistoryEntry[]): Promise<void> {
+	await ensureDbFile();
+	const db = initDb();
+	const insert = db.prepare(
+		`INSERT INTO history (stretch, holdNumber, durationSeconds, timestamp) VALUES (@stretch, @holdNumber, @durationSeconds, @timestamp)`
+	);
+
+	const transaction = db.transaction((toInsert: HistoryEntry[]) => {
+		db.prepare(`DELETE FROM history`).run();
+		for (const entry of toInsert) {
+			insert.run(entry);
+		}
+	});
+
+	transaction(entries);
+	db.close();
+}
+
 export async function deleteTodayEntry({
 	stretch,
 	holdNumber,

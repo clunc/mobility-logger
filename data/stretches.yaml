@@ -59,6 +59,7 @@
   defaultDurationSeconds: 65
 - name: 90/90 (hips)
   defaultDurationSeconds: 65
+  holdLabels: [Left, Right]
 - name: Forward Fold (hamstrings, spine)
   defaultDurationSeconds: 65
   holdLabels: [Left, Right]
