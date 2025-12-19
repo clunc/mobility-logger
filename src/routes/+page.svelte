@@ -131,6 +131,7 @@
 
 		try {
 			await deleteHistoryEntry(entry);
+			loadError = '';
 		} catch (error) {
 			console.error(error);
 			loadError = 'Could not delete entry. History remains unchanged.';
@@ -153,9 +154,7 @@
 		hold.timestamp = null;
 		currentSession = [...currentSession];
 
-		if (!loadError) {
-			await syncHistory();
-		}
+		await syncHistory();
 	}
 
 	function resetHoldTimer() {

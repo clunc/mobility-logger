@@ -26,18 +26,20 @@
 		onSetDuration(stretchIdx, holdIdx, toNumberOrNull(target.value));
 	}
 
-	$: isRunning = isActiveHold && (timerStatus === 'active' || timerStatus === 'warning');
+	$: isRunning = isActiveHold && ['active', 'warning'].includes(timerStatus);
 	$: actionLabel = isRunning ? 'Finish' : 'Start';
 	$: actionAriaLabel = isRunning ? 'Finish hold early' : 'Start hold timer';
 	$: displayLabel =
 		holdLabel ?? (totalHolds > 1 ? `Hold ${hold.holdNumber}` : '');
 </script>
 
-<div class="set-row">
+<div
+	class="set-row"
+	class:activeHold={isActiveHold}
+	data-state={isActiveHold ? timerStatus : 'idle'}
+>
 	{#if displayLabel}
-		<div class="set-header">
-			<div class="set-number">{displayLabel}</div>
-		</div>
+		<div class="set-number">{displayLabel}</div>
 	{/if}
 
 	<div class="set-inputs">
@@ -86,14 +88,14 @@
 					Undo
 				</button>
 			{:else}
-				<button
-					class="log-btn"
-					class:active={isRunning}
-					aria-label={actionAriaLabel}
-					on:click={() => onLogHold(stretchIdx, holdIdx)}
-					type="button"
-				>
-					{actionLabel}
+					<button
+						class="log-btn"
+						class:active={isRunning}
+						aria-label={actionAriaLabel}
+						on:click={() => onLogHold(stretchIdx, holdIdx)}
+						type="button"
+					>
+						{actionLabel}
 				</button>
 			{/if}
 		</div>
@@ -107,17 +109,102 @@
 		gap: 10px;
 		padding: 12px 6px;
 		border-bottom: 1px solid #f0f0f0;
+		position: relative;
+		border-radius: 10px;
 	}
 
 	.set-row:last-child {
 		border-bottom: none;
 	}
 
-	.set-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 12px;
+	.activeHold {
+		border-radius: 14px;
+		box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+		padding: 14px 8px;
+		transition: background 0.14s ease, box-shadow 0.2s ease;
+	}
+
+	.activeHold::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 6px;
+		border-radius: 10px 0 0 10px;
+		transition: background 0.14s ease;
+	}
+
+	.activeHold[data-state='active'] {
+		background: #e8f0ff;
+		box-shadow: 0 10px 22px rgba(59, 130, 246, 0.25);
+	}
+
+	.activeHold[data-state='active']::before {
+		background: #1d4ed8;
+	}
+
+	.activeHold[data-state='active'] .set-input {
+		background: #eff6ff;
+		border-color: #93c5fd;
+		box-shadow: inset 0 1px 4px rgba(59, 130, 246, 0.18);
+	}
+
+	.activeHold[data-state='active'] .log-btn {
+		background: #2563eb;
+		box-shadow: 0 3px 10px rgba(37, 99, 235, 0.32);
+	}
+
+	.activeHold[data-state='active'] .set-number {
+		color: #1d4ed8;
+	}
+
+	.activeHold[data-state='warning'] {
+		background: #fff7ed;
+		box-shadow: 0 10px 22px rgba(249, 115, 22, 0.24);
+	}
+
+	.activeHold[data-state='warning']::before {
+		background: #ea580c;
+	}
+
+	.activeHold[data-state='warning'] .set-input {
+		background: #fff1e6;
+		border-color: #fdba74;
+		box-shadow: inset 0 1px 4px rgba(234, 88, 12, 0.14);
+	}
+
+	.activeHold[data-state='warning'] .log-btn {
+		background: #f97316;
+		box-shadow: 0 3px 10px rgba(249, 115, 22, 0.28);
+	}
+
+	.activeHold[data-state='warning'] .set-number {
+		color: #ea580c;
+	}
+
+	.activeHold[data-state='done'] {
+		background: #ecfdf3;
+		box-shadow: 0 10px 22px rgba(34, 197, 94, 0.24);
+	}
+
+	.activeHold[data-state='done']::before {
+		background: #16a34a;
+	}
+
+	.activeHold[data-state='done'] .set-input {
+		background: #f0fdf4;
+		border-color: #86efac;
+		box-shadow: inset 0 1px 4px rgba(22, 163, 74, 0.14);
+	}
+
+	.activeHold[data-state='done'] .log-btn {
+		background: #22c55e;
+		box-shadow: 0 3px 10px rgba(34, 197, 94, 0.24);
+	}
+
+	.activeHold[data-state='done'] .set-number {
+		color: #16a34a;
 	}
 
 	.set-number {
@@ -233,7 +320,6 @@
 		border: none;
 		padding: 0 14px;
 		min-width: 64px;
-		height: 44px;
 		height: 44px;
 		border-radius: 10px;
 		font-size: 14px;

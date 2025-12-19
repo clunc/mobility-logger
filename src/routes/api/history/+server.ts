@@ -52,12 +52,6 @@ export const DELETE: RequestHandler = async ({ request }) => {
 		timestamp: string;
 	};
 
-	const tsDate = new Date(timestamp);
-	const today = new Date();
-	if (Number.isNaN(tsDate.getTime()) || tsDate.toDateString() !== today.toDateString()) {
-		return json({ error: 'Can only delete entries from today' }, { status: 400 });
-	}
-
 	const deleted = await deleteTodayEntry({ stretch, holdNumber, timestamp });
 	return json({ ok: true, deleted });
 };
