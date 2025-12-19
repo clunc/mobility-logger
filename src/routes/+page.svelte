@@ -17,7 +17,7 @@
 	let holdTimerStatus: 'idle' | 'active' | 'warning' | 'done' = 'idle';
 	let holdTimerInterval: ReturnType<typeof setInterval> | null = null;
 	let holdHideTimeout: ReturnType<typeof setTimeout> | null = null;
-	let activeHold: { stretchIdx: number; holdIdx: number } | null = null;
+	let activeHold: { stretchIdx: number; holdIdx: number; endsAt: number } | null = null;
 	let pollInterval: ReturnType<typeof setInterval> | null = null;
 	let ready = false;
 	let loadError = '';
@@ -31,6 +31,7 @@
 			loadError = 'Could not load history. Changes will not be saved.';
 		} finally {
 			currentSession = createSession(data.stretchTemplate, history);
+			resumeActiveTimerFromHistory();
 			ready = true;
 			pollInterval = setInterval(syncHistory, 15000);
 			if (import.meta.env.DEV) {
@@ -54,6 +55,8 @@
 			console.error('Failed to refresh history', error);
 			loadError = 'Could not refresh history from server.';
 		}
+
+		resumeActiveTimerFromHistory();
 	}
 
 	function adjustDuration(stretchIdx: number, holdIdx: number, delta: number) {
@@ -81,32 +84,23 @@
 			return;
 		}
 
-		if (
-			activeHold &&
-			activeHold.stretchIdx === stretchIdx &&
-			activeHold.holdIdx === holdIdx &&
-			(holdTimerStatus === 'active' || holdTimerStatus === 'warning')
-		) {
-			await finishHoldEarly(stretchIdx, holdIdx);
-			return;
-		}
-
-		startHoldTimer(stretchIdx, holdIdx);
+		await startHoldAndLog(stretchIdx, holdIdx);
 	}
 
-	async function completeHold(stretchIdx: number, holdIdx: number) {
+	async function startHoldAndLog(stretchIdx: number, holdIdx: number) {
 		const stretch = currentSession[stretchIdx];
 		const hold = stretch.holds[holdIdx];
 		if (hold.completed) return;
 
+		const timestamp = new Date().toISOString();
 		hold.completed = true;
-		hold.timestamp = new Date().toISOString();
+		hold.timestamp = timestamp;
 
 		const entry: HistoryEntry = {
 			stretch: stretch.name,
 			holdNumber: hold.holdNumber,
 			durationSeconds: hold.durationSeconds,
-			timestamp: hold.timestamp
+			timestamp
 		};
 
 		history = [entry, ...history];
@@ -121,6 +115,8 @@
 				loadError = 'Could not save history. Changes will not be saved.';
 			}
 		}
+
+		startTimerForEntry(stretchIdx, holdIdx, entry);
 	}
 
 	async function undoHold(stretchIdx: number, holdIdx: number) {
@@ -159,6 +155,14 @@
 		hold.timestamp = null;
 		currentSession = [...currentSession];
 
+		if (
+			activeHold &&
+			activeHold.stretchIdx === stretchIdx &&
+			activeHold.holdIdx === holdIdx
+		) {
+			resetHoldTimer();
+		}
+
 		await syncHistory();
 	}
 
@@ -173,33 +177,41 @@
 		activeHold = null;
 	}
 
-	function startHoldTimer(stretchIdx: number, holdIdx: number) {
+	function startTimerForEntry(
+		stretchIdx: number,
+		holdIdx: number,
+		entry: Pick<HistoryEntry, 'timestamp' | 'durationSeconds'>
+	) {
 		resetHoldTimer();
 
-		const hold = currentSession[stretchIdx].holds[holdIdx];
-		if (!Number.isFinite(hold.durationSeconds) || hold.durationSeconds <= 0) {
-			alert('Please enter a valid duration');
+		const duration = Math.max(1, Math.round(entry.durationSeconds || DEFAULT_HOLD_SECONDS));
+		const startedAt = new Date(entry.timestamp).getTime();
+		const endsAt = startedAt + duration * 1000;
+		const now = Date.now();
+
+		if (Number.isNaN(startedAt) || endsAt <= now) {
+			resetHoldTimer();
 			return;
 		}
 
-		holdTimeRemaining = Math.max(1, Math.round(hold.durationSeconds || DEFAULT_HOLD_SECONDS));
+		activeHold = { stretchIdx, holdIdx, endsAt };
+		holdTimeRemaining = Math.round((endsAt - now) / 1000);
 		holdTimerStatus = holdTimeRemaining <= 5 ? 'warning' : 'active';
-		activeHold = { stretchIdx, holdIdx };
 
 		holdTimerInterval = setInterval(() => {
-			holdTimeRemaining -= 1;
+			const remainingMs = (activeHold?.endsAt ?? 0) - Date.now();
+			holdTimeRemaining = Math.max(0, Math.round(remainingMs / 1000));
 
 			if (holdTimeRemaining <= 0) {
-				holdTimeRemaining = 0;
 				holdTimerStatus = 'done';
-				clearInterval(holdTimerInterval!);
-				holdTimerInterval = null;
+				if (holdTimerInterval) {
+					clearInterval(holdTimerInterval);
+					holdTimerInterval = null;
+				}
 
 				if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
 					navigator.vibrate([200, 100, 200]);
 				}
-
-				void completeHold(stretchIdx, holdIdx);
 
 				holdHideTimeout = setTimeout(() => {
 					holdTimerStatus = 'idle';
@@ -211,21 +223,32 @@
 		}, 1000);
 	}
 
-	async function finishHoldEarly(stretchIdx: number, holdIdx: number) {
-		if (holdTimerInterval) clearInterval(holdTimerInterval);
-		if (holdHideTimeout) clearTimeout(holdHideTimeout);
+	function resumeActiveTimerFromHistory() {
+		const now = Date.now();
+		const latestActive = history
+			.filter((entry) => {
+				const started = new Date(entry.timestamp).getTime();
+				if (Number.isNaN(started)) return false;
+				return started + entry.durationSeconds * 1000 > now;
+			})
+			.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1))[0];
 
-		holdTimerInterval = null;
-		holdHideTimeout = null;
-		holdTimeRemaining = 0;
-		holdTimerStatus = 'done';
+		if (!latestActive) {
+			resetHoldTimer();
+			return;
+		}
 
-		await completeHold(stretchIdx, holdIdx);
+		const stretchIdx = currentSession.findIndex((s) => s.name === latestActive.stretch);
+		const holdIdx = currentSession[stretchIdx]?.holds.findIndex(
+			(h) => h.holdNumber === latestActive.holdNumber
+		);
 
-		holdHideTimeout = setTimeout(() => {
-			holdTimerStatus = 'idle';
-			activeHold = null;
-		}, 3000);
+		if (stretchIdx === -1 || holdIdx === undefined || holdIdx === -1) {
+			resetHoldTimer();
+			return;
+		}
+
+		startTimerForEntry(stretchIdx, holdIdx, latestActive);
 	}
 
 	function mergeInProgressSession(newSession: SessionStretch[]): SessionStretch[] {
