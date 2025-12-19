@@ -295,19 +295,30 @@
 	$: completionPercent = totalHolds === 0 ? 0 : Math.round((completedHolds / totalHolds) * 100);
 
 	const calculateStreak = (entries: HistoryEntry[]) => {
-		const datesWithEntries = new Set(entries.map((entry) => new Date(entry.timestamp).toDateString()));
+		const timestamps = entries
+			.map((entry) => new Date(entry.timestamp).getTime())
+			.filter((ts) => !Number.isNaN(ts));
+		if (timestamps.length === 0) return { count: 0, hasToday: false };
+
+		const datesWithEntries = new Set(
+			timestamps.map((ts) => new Date(ts).toDateString())
+		);
+
+		const latestTs = Math.max(...timestamps);
+		const cursor = new Date(latestTs);
 		let streak = 0;
-		const cursor = new Date();
 
 		while (datesWithEntries.has(cursor.toDateString())) {
 			streak += 1;
 			cursor.setDate(cursor.getDate() - 1);
 		}
 
-		return streak;
+		return { count: streak, hasToday: datesWithEntries.has(todayString()) };
 	};
 
-	$: streakDays = calculateStreak(history);
+	$: streakInfo = calculateStreak(history);
+	$: streakDays = streakInfo.count;
+	$: streakHasToday = streakInfo.hasToday;
 	$: holdLabelsMap = Object.fromEntries(
 		data.stretchTemplate.map((stretch) => [stretch.name, stretch.holdLabels ?? []])
 	);
@@ -359,8 +370,8 @@
 	<nav class="navbar">
 		<h1>🧘 Stretch Logger</h1>
 			<div class="badges">
-				<div class="summary-pill" aria-live="polite">
-					<span class="pill-icon">🔥</span>
+				<div class={`summary-pill streak ${streakHasToday ? 'on' : 'off'}`} aria-live="polite">
+					<span class="pill-icon">{streakHasToday ? '🔥' : '🕯️'}</span>
 					<span>{streakDays} day{streakDays === 1 ? '' : 's'} streak</span>
 				</div>
 				<div class="summary-pill" aria-live="polite">
@@ -388,12 +399,12 @@
 					</div>
 				</div>
 				<div class="summary-card">
-					<div class="summary-label">Streak</div>
-					<div class="summary-value">{streakDays}</div>
-					<div class="summary-sub">
-						{streakDays === 0 ? 'Start today' : 'Keep it going'}
-					</div>
-				</div>
+			<div class="summary-label">Streak</div>
+			<div class="summary-value">{streakDays}</div>
+			<div class="summary-sub">
+				{streakHasToday ? 'On fire' : 'Finish today to keep it lit'}
+			</div>
+		</div>
 				<div class="summary-card">
 					<div class="summary-label">Monthly Accordance</div>
 					<div class="summary-value">{monthlyAccordance}%</div>
@@ -474,6 +485,18 @@
 		border-radius: 999px;
 		font-weight: 700;
 		font-size: 13px;
+	}
+
+	.summary-pill.streak.off {
+		background: #f8fafc;
+		color: #475569;
+		border-color: #e2e8f0;
+	}
+
+	.summary-pill.streak.on {
+		background: #fff7ed;
+		color: #9a3412;
+		border-color: #fed7aa;
 	}
 
 	.pill-icon {
