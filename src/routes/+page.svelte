@@ -7,6 +7,7 @@
 	import { createSession, DEFAULT_HOLD_SECONDS, todayString } from '$lib/stretch';
 	import type { HistoryEntry, SessionStretch } from '$lib/types';
 	import type { PageData } from './$types';
+	import { invalidateAll } from '$app/navigation';
 
 	export let data: PageData;
 
@@ -20,6 +21,7 @@
 	let pollInterval: ReturnType<typeof setInterval> | null = null;
 	let ready = false;
 	let loadError = '';
+	let templateVersion = data.templateVersion;
 
 	onMount(async () => {
 		try {
@@ -31,6 +33,9 @@
 			currentSession = createSession(data.stretchTemplate, history);
 			ready = true;
 			pollInterval = setInterval(syncHistory, 15000);
+			if (import.meta.env.DEV) {
+				startTemplateWatcher();
+			}
 		}
 	});
 
@@ -255,7 +260,8 @@
 			? 'Hold complete'
 			: `${Math.floor(holdTimeRemaining / 60)}:${String(holdTimeRemaining % 60).padStart(2, '0')}`;
 
-	const isActiveHold = (stretchIdx: number, holdIdx: number) =>
+	// Recompute predicate when the active hold changes so rows stay in sync with the timer.
+	$: isActiveHold = (stretchIdx: number, holdIdx: number) =>
 		activeHold?.stretchIdx === stretchIdx && activeHold?.holdIdx === holdIdx;
 
 	$: totalHolds = currentSession.reduce((sum, stretch) => sum + stretch.holds.length, 0);
@@ -302,6 +308,24 @@
 	};
 
 	$: monthlyAccordance = calculateMonthlyAccordance(history);
+
+	async function startTemplateWatcher() {
+		const watcher = setInterval(async () => {
+			try {
+				const res = await fetch('/api/stretch-template-version', { cache: 'no-store' });
+				if (!res.ok) return;
+				const { version } = (await res.json()) as { version?: number };
+				if (typeof version === 'number' && version !== templateVersion) {
+					templateVersion = version;
+					await invalidateAll();
+				}
+			} catch (error) {
+				console.error('Template watch failed', error);
+			}
+		}, 2000);
+
+		onDestroy(() => clearInterval(watcher));
+	}
 </script>
 
 <svelte:head>

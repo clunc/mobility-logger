@@ -49,11 +49,11 @@ function validateTemplate(raw: unknown): StretchTemplate[] {
 	});
 }
 
-export async function loadStretchTemplate(): Promise<StretchTemplate[]> {
+export async function loadStretchTemplate(): Promise<{ template: StretchTemplate[]; version: number }> {
 	const stats = await fs.stat(STRETCHES_FILE);
 
 	if (cachedTemplate && cachedTemplate.mtimeMs === stats.mtimeMs) {
-		return cachedTemplate.value;
+		return { template: cachedTemplate.value, version: cachedTemplate.mtimeMs };
 	}
 
 	const raw = await fs.readFile(STRETCHES_FILE, 'utf8');
@@ -61,5 +61,10 @@ export async function loadStretchTemplate(): Promise<StretchTemplate[]> {
 	const template = validateTemplate(parsed);
 
 	cachedTemplate = { mtimeMs: stats.mtimeMs, value: template };
-	return template;
+	return { template, version: stats.mtimeMs };
+}
+
+export async function getStretchTemplateVersion(): Promise<number> {
+	const stats = await fs.stat(STRETCHES_FILE);
+	return stats.mtimeMs;
 }

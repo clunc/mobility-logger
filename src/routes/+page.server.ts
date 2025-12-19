@@ -2,6 +2,6 @@ import { loadStretchTemplate } from '$lib/server/stretchConfig';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
-	const stretchTemplate = await loadStretchTemplate();
-	return { stretchTemplate };
+	const { template, version } = await loadStretchTemplate();
+	return { stretchTemplate: template, templateVersion: version };
 };
