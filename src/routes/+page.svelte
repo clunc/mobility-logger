@@ -33,9 +33,26 @@ import type { HistoryEntry, SessionStretch, StretchTemplate } from '$lib/types';
 		'Knee-to-Wall (ankles)',
 		'Quad + Hip Flexor (legs, hips)',
 		'Forward Fold (hamstrings, spine)',
-		'Cat-Cow (spine)'
+		'Cat-Cow (spine)',
+		'Weighted Thoracic Extension Over Foam Roller (thoracic)'
 	];
 	const fullRegimenOrder = [
+		'Banded External Rotation 90/90 (shoulder rotators)',
+		'Neck Rotations (neck)',
+		'Chin Tucks (neck)',
+		'Side Neck Stretch (neck)',
+		'Levator Scap Stretch (neck)',
+		'Cross-Body Shoulder Stretch (shoulders)',
+		'45 deg Armpit Neck Stretch (neck)',
+		'Wrist Flexor Stretch (forearms)',
+		'Wrist Extensor Stretch (forearms)',
+		'Seated Lateral Stretch (lat ribs, intercostals, QL)',
+		'Knee-to-Wall (ankles)',
+		'Calf Stretch (calves)',
+		'Soleus Stretch (soleus)',
+		'Doorway Stretch (chest, shoulders)',
+		'Overhead Triceps/Lat Stretch (arms, back)',
+		'Toe Extension Mobility Drill (feet/ankles)',
 		'Cat-Cow (spine)',
 		'Sleeper Stretch (shoulders)',
 		'Open Book (upper back, chest)',
@@ -466,7 +483,7 @@ import type { HistoryEntry, SessionStretch, StretchTemplate } from '$lib/types';
 				<span>Regimen</span>
 				<select bind:value={regimenMode} aria-label="Regimen">
 					<option value="auto">{autoRegimenLabel}</option>
-					<option value="short">Short</option>
+					<option value="short">10-min daily</option>
 					<option value="full">Full</option>
 				</select>
 			</label>
