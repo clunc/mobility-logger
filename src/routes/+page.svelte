@@ -448,16 +448,8 @@ import type { HistoryEntry, SessionStretch, StretchTemplate } from '$lib/types';
 
 <div class="page">
 	<nav class="navbar">
-		<h1>🧘 Stretch Logger</h1>
-		<div class="navbar-controls">
-			<label class="regimen-select">
-				<span>Regimen</span>
-				<select bind:value={regimenMode} aria-label="Regimen">
-					<option value="auto">{autoRegimenLabel}</option>
-					<option value="short">Short</option>
-					<option value="full">Full</option>
-				</select>
-			</label>
+		<div class="navbar-top-row">
+			<h1>🧘 Stretch Logger</h1>
 			<div class="badges">
 				<div class={`summary-pill streak ${streakHasToday ? 'on' : 'off'}`} aria-live="polite">
 					<span class="pill-icon">{streakHasToday ? '🔥' : '🕯️'}</span>
@@ -468,6 +460,16 @@ import type { HistoryEntry, SessionStretch, StretchTemplate } from '$lib/types';
 					<span>{monthlyAccordance}% month</span>
 				</div>
 			</div>
+		</div>
+		<div class="navbar-controls">
+			<label class="regimen-select">
+				<span>Regimen</span>
+				<select bind:value={regimenMode} aria-label="Regimen">
+					<option value="auto">{autoRegimenLabel}</option>
+					<option value="short">Short</option>
+					<option value="full">Full</option>
+				</select>
+			</label>
 		</div>
 	</nav>
 
@@ -556,6 +558,13 @@ import type { HistoryEntry, SessionStretch, StretchTemplate } from '$lib/types';
 		z-index: 100;
 		box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
 		border-bottom: 1px solid #e2e8f0;
+	}
+
+	.navbar-top-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		width: 100%;
 	}
 
 	.navbar h1 {
@@ -688,21 +697,27 @@ import type { HistoryEntry, SessionStretch, StretchTemplate } from '$lib/types';
 	}
 
 	@media (max-width: 540px) {
+		.navbar {
+			flex-direction: column;
+			gap: 10px;
+		}
+
+		.navbar-controls {
+			width: 100%;
+			justify-content: center;
+		}
+
+		.regimen-select {
+			width: 100%;
+			justify-content: center;
+		}
+
 		.navbar h1 {
 			font-size: 17px;
 		}
 
 		.content {
 			padding: 14px 10px;
-		}
-
-		.navbar-controls {
-			gap: 8px;
-		}
-
-		.regimen-select {
-			padding: 5px 8px;
-			font-size: 11px;
 		}
 
 		.badges {
