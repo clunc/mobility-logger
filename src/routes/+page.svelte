@@ -5,7 +5,7 @@
 	import StretchTimer from '$lib/components/StretchTimer.svelte';
 	import { appendHistory, deleteHistoryEntry, fetchHistory } from '$lib/api/history';
 	import { createSession, DEFAULT_HOLD_SECONDS, todayString } from '$lib/stretch';
-import type { HistoryEntry, SessionStretch, StretchTemplate } from '$lib/types';
+	import type { HistoryEntry, SessionStretch, StretchTemplate } from '$lib/types';
 	import type { PageData } from './$types';
 	import { invalidateAll } from '$app/navigation';
 
@@ -24,59 +24,27 @@ import type { HistoryEntry, SessionStretch, StretchTemplate } from '$lib/types';
 	let templateVersion = data.templateVersion;
 	type RegimenMode = 'auto' | 'short' | 'full';
 	let regimenMode: RegimenMode = 'auto';
-	const shortRegimenDays = new Set([0, 1, 3, 4, 5]);
-	const shortRegimenOrder = [
-		'Chin Tucks (neck)',
-		'Levator Scap Stretch (neck)',
-		'45 deg Armpit Neck Stretch (neck)',
-		'Banded External Rotation 90/90 (shoulder rotators)',
-		'Knee-to-Wall (ankles)',
-		'Quad + Hip Flexor (legs, hips)',
-		'Forward Fold (hamstrings, spine)',
-		'Cat-Cow (spine)',
-		'Weighted Thoracic Extension Over Foam Roller (thoracic)'
-	];
-	const fullRegimenOrder = [
-		'Banded External Rotation 90/90 (shoulder rotators)',
-		'Neck Rotations (neck)',
-		'Chin Tucks (neck)',
-		'Side Neck Stretch (neck)',
-		'Levator Scap Stretch (neck)',
-		'Cross-Body Shoulder Stretch (shoulders)',
-		'45 deg Armpit Neck Stretch (neck)',
-		'Wrist Flexor Stretch (forearms)',
-		'Wrist Extensor Stretch (forearms)',
-		'Seated Lateral Stretch (lat ribs, intercostals, QL)',
-		'Knee-to-Wall (ankles)',
-		'Calf Stretch (calves)',
-		'Soleus Stretch (soleus)',
-		'Doorway Stretch (chest, shoulders)',
-		'Overhead Triceps/Lat Stretch (arms, back)',
-		'Toe Extension Mobility Drill (feet/ankles)',
-		'Cat-Cow (spine)',
-		'Sleeper Stretch (shoulders)',
-		'Open Book (upper back, chest)',
-		'Quad + Hip Flexor (legs, hips)',
-		'Figure-4 (glutes)',
-		'Butterfly (groin)',
-		'90/90 (hips)',
-		'Forward Fold (hamstrings, spine)',
-		'Weighted Thoracic Extension Over Foam Roller (thoracic)',
-		'Side Lunges (groin)'
-	];
+	const autoRegimenByWeekDay = new Map<number, 'short' | 'full'>([
+		...data.regimenConfig.regimens.short.autoWeekDays.map((day) => [day, 'short'] as const),
+		...data.regimenConfig.regimens.full.autoWeekDays.map((day) => [day, 'full'] as const)
+	]);
 	const getEffectiveRegimen = (mode: RegimenMode, weekDay: number) =>
-		mode === 'auto' ? (shortRegimenDays.has(weekDay) ? 'short' : 'full') : mode;
+		mode === 'auto' ? (autoRegimenByWeekDay.get(weekDay) ?? 'short') : mode;
 	const getRegimenTemplate = (template: StretchTemplate[], regimen: 'short' | 'full') => {
-		const order = regimen === 'short' ? shortRegimenOrder : fullRegimenOrder;
-		const lookup = new Map(template.map((stretch) => [stretch.name, stretch]));
-		const missing = order.filter((name) => !lookup.has(name));
-		const filtered = order.map((name) => lookup.get(name)).filter(Boolean) as StretchTemplate[];
+		const order = data.regimenConfig.regimens[regimen].order;
+		const lookup = new Map(template.map((stretch) => [stretch.id, stretch]));
+		const missing = order.filter((id) => !lookup.has(id));
+		const filtered = order.map((id) => lookup.get(id)).filter(Boolean) as StretchTemplate[];
 		return { template: filtered, missing };
 	};
 	let lastRegimenKey = '';
 	let regimenKey = '';
 	let autoRegimenLabel = 'Auto (today)';
 	let regimenMissing: string[] = [];
+	const resolveMissingLabel = (id: string) => {
+		const stretch = data.stretchTemplate.find((entry) => entry.id === id);
+		return stretch ? `${stretch.name} (${id})` : id;
+	};
 
 	const ensureStretchInSession = (stretchName: string) => {
 		const existing = currentSession.find((s) => s.name === stretchName);
@@ -407,9 +375,7 @@ import type { HistoryEntry, SessionStretch, StretchTemplate } from '$lib/types';
 		data.stretchTemplate.map((stretch) => [stretch.name, stretch.holdLabels ?? []])
 	);
 	$: weekDay = new Date().getDay();
-	$: autoRegimenLabel = shortRegimenDays.has(weekDay)
-		? 'Auto (short today)'
-		: 'Auto (full today)';
+	$: autoRegimenLabel = `Auto (${data.regimenConfig.regimens[getEffectiveRegimen('auto', weekDay)].label.toLowerCase()} today)`;
 	$: regimenKey = `${regimenMode}-${weekDay}`;
 	$: if (ready && regimenKey !== lastRegimenKey) {
 		lastRegimenKey = regimenKey;
@@ -483,8 +449,8 @@ import type { HistoryEntry, SessionStretch, StretchTemplate } from '$lib/types';
 				<span>Regimen</span>
 				<select bind:value={regimenMode} aria-label="Regimen">
 					<option value="auto">{autoRegimenLabel}</option>
-					<option value="short">10-min daily</option>
-					<option value="full">Full</option>
+					<option value="short">{data.regimenConfig.regimens.short.label}</option>
+					<option value="full">{data.regimenConfig.regimens.full.label}</option>
 				</select>
 			</label>
 		</div>
@@ -501,7 +467,7 @@ import type { HistoryEntry, SessionStretch, StretchTemplate } from '$lib/types';
 			{/if}
 			{#if regimenMissing.length}
 				<div class="alert">
-					Regimen list missing from template: {regimenMissing.join(', ')}
+					Regimen list missing from template: {regimenMissing.map(resolveMissingLabel).join(', ')}
 				</div>
 			{/if}
 			<section class="summary">

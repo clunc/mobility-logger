@@ -13,6 +13,7 @@ export type HoldEntry = {
 };
 
 export type SessionStretch = {
+	id: string;
 	name: string;
 	holds: HoldEntry[];
 	defaultDurationSeconds: number;
@@ -20,7 +21,21 @@ export type SessionStretch = {
 };
 
 export type StretchTemplate = {
+	id: string;
 	name: string;
 	defaultDurationSeconds: number;
 	holdLabels?: string[];
+};
+
+export type RegimenDefinition = {
+	label: string;
+	order: string[];
+	autoWeekDays: number[];
+};
+
+export type RegimenConfig = {
+	regimens: {
+		short: RegimenDefinition;
+		full: RegimenDefinition;
+	};
 };

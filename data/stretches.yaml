@@ -1,70 +1,184 @@
-- name: Banded External Rotation 90/90 (shoulder rotators)
-  defaultDurationSeconds: 65
-- name: Neck Rotations (neck)
-  defaultDurationSeconds: 65
-- name: Chin Tucks (neck)
-  defaultDurationSeconds: 65
-- name: Side Neck Stretch (neck)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Levator Scap Stretch (neck)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Cross-Body Shoulder Stretch (shoulders)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: 45 deg Armpit Neck Stretch (neck)
-  defaultDurationSeconds: 65
-- name: Wrist Flexor Stretch (forearms)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Wrist Extensor Stretch (forearms)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Seated Lateral Stretch (lat ribs, intercostals, QL)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Knee-to-Wall (ankles)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Calf Stretch (calves)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Soleus Stretch (soleus)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Doorway Stretch (chest, shoulders)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Overhead Triceps/Lat Stretch (arms, back)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Toe Extension Mobility Drill (feet/ankles)
-  defaultDurationSeconds: 65
-- name: Cat-Cow (spine)
-  defaultDurationSeconds: 65
-- name: Sleeper Stretch (shoulders)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Open Book (upper back, chest)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Quad + Hip Flexor (legs, hips)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Figure-4 (glutes)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Butterfly (groin)
-  defaultDurationSeconds: 65
-- name: 90/90 (hips)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Forward Fold (hamstrings, spine)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
-- name: Weighted Thoracic Extension Over Foam Roller (thoracic)
-  defaultDurationSeconds: 65
-- name: Side Lunges (groin)
-  defaultDurationSeconds: 65
-  holdLabels: [Left, Right]
+stretches:
+  - name: Banded External Rotation 90/90 (shoulder rotators)
+    defaultDurationSeconds: 65
+    id: ee49d6bf-0684-4101-8c9a-15a97e63839c
+  - name: Neck Rotations (neck)
+    defaultDurationSeconds: 65
+    id: e0ac0253-2eb9-4623-a165-a85891dd9aeb
+  - name: Chin Tucks (neck)
+    defaultDurationSeconds: 65
+    id: cc84228b-9860-4aef-a5a0-d6cc4a46aa1a
+  - name: Side Neck Stretch (neck)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: 70d122ee-6df3-4924-8f59-a84b96822960
+  - name: Levator Scap Stretch (neck)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: 442c80a9-355e-4bd7-b7b8-73a34c087699
+  - name: Cross-Body Shoulder Stretch (shoulders)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: 062dbfdb-97b2-4f42-81bd-4844c97f59d8
+  - name: 45 deg Armpit Neck Stretch (neck)
+    defaultDurationSeconds: 65
+    id: 59a2eb31-8aab-431a-9ab1-b7b7c03e0ff4
+  - name: Wrist Flexor Stretch (forearms)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: ed275668-758e-4943-9eec-cce263fc2932
+  - name: Wrist Extensor Stretch (forearms)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: 82fa5297-ed2a-497d-8267-ff6c413b87ec
+  - name: Seated Lateral Stretch (lat ribs, intercostals, QL)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: 4eba4145-460a-4372-8dc5-94cd06b61878
+  - name: Knee-to-Wall (ankles)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: 133eb088-c622-4d35-8193-335011d2f412
+  - name: Calf Stretch (calves)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: fbacc5d5-7374-4d4b-840b-5bf2211e88d2
+  - name: Soleus Stretch (soleus)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: c6067531-4e93-46a1-99a1-74161699c782
+  - name: Doorway Stretch (chest, shoulders)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: bdc14685-2bca-49fa-92be-a2c6e985fcf5
+  - name: Overhead Triceps/Lat Stretch (arms, back)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: bb3f5aaa-0cad-47af-9b4c-8ea7f3caaa2f
+  - name: Toe Extension Mobility Drill (feet/ankles)
+    defaultDurationSeconds: 65
+    id: 5d7688b1-83c1-41a6-ae86-440ea4c68057
+  - name: Cat-Cow (spine)
+    defaultDurationSeconds: 65
+    id: ade77a7a-1cbd-48bb-8d16-c925166a6e9a
+  - name: Sleeper Stretch (shoulders)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: 329615a6-2912-4d81-bdbf-1b6e4037bf1d
+  - name: Open Book (upper back, chest)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: 82eaa210-54e8-45c1-b132-e31d606a1444
+  - name: Quad + Hip Flexor (legs, hips)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: d231cae8-9cd1-4da1-8778-014e1e9e110a
+  - name: Figure-4 (glutes)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: 8a37bc26-4794-4df2-9f31-56c0c5ed5076
+  - name: Butterfly (groin)
+    defaultDurationSeconds: 65
+    id: 61a94cc4-8991-468f-ac24-a58af48238d7
+  - name: 90/90 (hips)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: 60a2c5f3-e930-4c82-a998-c8c427cb7538
+  - name: Forward Fold (hamstrings, spine)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: 8024fcd8-6bcc-4317-972e-19a0065525fd
+  - name: Weighted Thoracic Extension Over Foam Roller (thoracic)
+    defaultDurationSeconds: 65
+    id: 401bc81a-fe78-4961-acdd-f0eb44963a26
+  - name: Side Lunges (groin)
+    defaultDurationSeconds: 65
+    holdLabels:
+      - Left
+      - Right
+    id: a4af921c-2d6e-4a29-8ed9-5e600aeca514
+regimens:
+  short:
+    label: 10-min daily
+    autoWeekDays:
+      - 0
+      - 1
+      - 3
+      - 4
+      - 5
+    order:
+      - cc84228b-9860-4aef-a5a0-d6cc4a46aa1a
+      - 442c80a9-355e-4bd7-b7b8-73a34c087699
+      - 59a2eb31-8aab-431a-9ab1-b7b7c03e0ff4
+      - ee49d6bf-0684-4101-8c9a-15a97e63839c
+      - 133eb088-c622-4d35-8193-335011d2f412
+      - d231cae8-9cd1-4da1-8778-014e1e9e110a
+      - 8024fcd8-6bcc-4317-972e-19a0065525fd
+      - ade77a7a-1cbd-48bb-8d16-c925166a6e9a
+      - 401bc81a-fe78-4961-acdd-f0eb44963a26
+  full:
+    label: Full
+    autoWeekDays:
+      - 2
+      - 6
+    order:
+      - ee49d6bf-0684-4101-8c9a-15a97e63839c
+      - e0ac0253-2eb9-4623-a165-a85891dd9aeb
+      - cc84228b-9860-4aef-a5a0-d6cc4a46aa1a
+      - 70d122ee-6df3-4924-8f59-a84b96822960
+      - 442c80a9-355e-4bd7-b7b8-73a34c087699
+      - 062dbfdb-97b2-4f42-81bd-4844c97f59d8
+      - 59a2eb31-8aab-431a-9ab1-b7b7c03e0ff4
+      - ed275668-758e-4943-9eec-cce263fc2932
+      - 82fa5297-ed2a-497d-8267-ff6c413b87ec
+      - 4eba4145-460a-4372-8dc5-94cd06b61878
+      - 133eb088-c622-4d35-8193-335011d2f412
+      - fbacc5d5-7374-4d4b-840b-5bf2211e88d2
+      - c6067531-4e93-46a1-99a1-74161699c782
+      - bdc14685-2bca-49fa-92be-a2c6e985fcf5
+      - bb3f5aaa-0cad-47af-9b4c-8ea7f3caaa2f
+      - 5d7688b1-83c1-41a6-ae86-440ea4c68057
+      - ade77a7a-1cbd-48bb-8d16-c925166a6e9a
+      - 329615a6-2912-4d81-bdbf-1b6e4037bf1d
+      - 82eaa210-54e8-45c1-b132-e31d606a1444
+      - d231cae8-9cd1-4da1-8778-014e1e9e110a
+      - 8a37bc26-4794-4df2-9f31-56c0c5ed5076
+      - 61a94cc4-8991-468f-ac24-a58af48238d7
+      - 60a2c5f3-e930-4c82-a998-c8c427cb7538
+      - 8024fcd8-6bcc-4317-972e-19a0065525fd
+      - 401bc81a-fe78-4961-acdd-f0eb44963a26
+      - a4af921c-2d6e-4a29-8ed9-5e600aeca514

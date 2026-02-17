@@ -101,6 +101,9 @@ dist
 
 # Local runtime data
 data/
+!data/
+data/*.db
+!data/stretches.yaml
 
 # vitepress build output
 **/.vitepress/dist
